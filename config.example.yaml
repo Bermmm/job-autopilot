@@ -1,0 +1,72 @@
+# job-autopilot configuration.
+#
+# Copy to config.yaml and edit. Nothing here is secret — API keys go in .env.
+#   cp config.example.yaml config.yaml
+
+llm:
+  # "anthropic" or "openai". The adapter layer makes these interchangeable.
+  provider: anthropic
+
+  # Exact model id. Not validated against a list, because model ids change
+  # more often than this file does.
+  #   anthropic: claude-opus-5-5 (most capable), claude-sonnet-5-5,
+  #              claude-haiku-5-5 (cheapest — fine for scoring at volume)
+  #   openai:    whatever model your account has access to
+  model: claude-opus-5-5
+
+  # How hard the model should think. Anthropic only; the OpenAI adapter
+  # ignores it. "low" is plenty for scoring, "medium" or "high" suits letters.
+  effort: medium
+
+  maxOutputTokens: 8000
+  timeoutMs: 120000
+  maxRetries: 3
+
+freshness:
+  # Only ingest postings published within this many hours. The whole point of
+  # the tool is to be early, so the default is deliberately tight.
+  windowHours: 48
+
+  # Ashby and some feeds do not always publish a timestamp. When true, such a
+  # posting is kept the first time it is seen and dated with first-seen time.
+  # When false it is skipped, which is stricter but misses real jobs.
+  keepUndatedOnFirstSight: true
+
+http:
+  # Sent on every request. Keep it identifiable and leave a contact URL —
+  # it is the polite thing to do, and some boards ask for it.
+  userAgent: 'job-autopilot/0.1 (+https://github.com/Bermmm/job-autopilot)'
+
+  # Global ceiling across all sources. These are free public APIs run by
+  # other people; there is no reason to hammer them.
+  requestsPerMinute: 30
+  perHostMinIntervalMs: 1000
+
+  timeoutMs: 15000
+  maxRetries: 3
+
+scoring:
+  # `draft` refuses to spend tokens on anything below this fit score.
+  minScoreToDraft: 70
+
+  # Hard cap on how much posting text is sent to the model.
+  maxDescriptionChars: 12000
+
+paths:
+  # Relative paths resolve against the repo root. data/ is gitignored.
+  database: ./data/job-autopilot.db
+  letters: ./data/letters
+  profile: ./profile.yaml
+  companies: ./companies.yaml
+
+autofill:
+  # Phase 2: Playwright form filling. Off by default.
+  enabled: false
+
+  # These two cannot be turned off. The schema only accepts `true`, so a
+  # config file can never claim a run happened without human review.
+  requireHumanReview: true
+  pauseOnUnknownQuestion: true
+
+  # Run the browser visibly so you can watch it work and take over.
+  headless: false

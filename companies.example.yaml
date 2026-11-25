@@ -1,0 +1,50 @@
+# Which public job boards to poll.
+#
+# Copy to companies.yaml and put in the companies you actually care about:
+#   cp companies.example.yaml companies.yaml
+#
+# Only sources with a documented public JSON API or feed belong here. This
+# project does not scrape LinkedIn, Indeed, or anywhere else whose terms
+# forbid it — that is a design decision, not a missing feature.
+
+boards:
+  # Greenhouse — the token is the slug in the public board URL.
+  # https://boards-api.greenhouse.io/v1/boards/<token>/jobs
+  # e.g. job-boards.greenhouse.io/figma → token: figma
+  - source: greenhouse
+    token: figma
+    name: Figma
+
+  - source: greenhouse
+    token: discord
+    name: Discord
+    # Optional filter: skip this board's postings unless the title matches.
+    # Matching is case-insensitive substring, applied before anything is stored.
+    titleIncludes:
+      - engineer
+      - developer
+
+  # Lever — the token is the slug in jobs.lever.co/<token>
+  # https://api.lever.co/v0/postings/<token>?mode=json
+  - source: lever
+    token: netlify
+    name: Netlify
+
+  # Ashby — the token is the slug in jobs.ashbyhq.com/<token>
+  # https://api.ashbyhq.com/posting-api/job-board/<token>
+  - source: ashby
+    token: ramp
+    name: Ramp
+
+  # Set enabled: false to park a company without deleting the entry.
+  - source: lever
+    token: example-co
+    name: Example Co
+    enabled: false
+
+# Optional RSS / Atom / JSON feeds, for job boards that publish one.
+# Leave empty if you have none.
+feeds: []
+  # - name: Example Jobs Feed
+  #   url: https://example.com/jobs.rss
+  #   format: rss

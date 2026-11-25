@@ -1,0 +1,101 @@
+#!/usr/bin/env bash
+#
+# Blocks secrets and personal data from entering the repo.
+#
+# Installed by `pnpm install` (the `prepare` script points core.hooksPath here),
+# so it works on a fresh clone with no extra tooling. Run it by hand with:
+#   pnpm guard
+#
+# To bypass in a genuine emergency: git commit --no-verify
+# If you need that, something is wrong with this list, not with the rule.
+
+set -uo pipefail
+
+# Paths that must never be committed, as extended regexes against the repo path.
+BLOCKED_PATHS=(
+  '(^|/)profile\.yaml$'
+  '(^|/)companies\.yaml$'
+  '(^|/)config\.yaml$'
+  '(^|/)\.env$'
+  '(^|/)\.env\.(local|development|production)$'
+  '(^|/)data/'
+  '(^|/).*\.sqlite3?$'
+  '(^|/).*\.db$'
+  '(^|/).*\.db-(wal|shm)$'
+)
+
+# Content patterns that look like live credentials.
+BLOCKED_CONTENT=(
+  'sk-ant-[A-Za-z0-9_-]{16,}'
+  'sk-proj-[A-Za-z0-9_-]{16,}'
+  'sk-[A-Za-z0-9]{32,}'
+  'AKIA[0-9A-Z]{16}'
+  'ghp_[A-Za-z0-9]{36}'
+  '-----BEGIN [A-Z ]*PRIVATE KEY-----'
+)
+
+fail=0
+note() { printf '%s\n' "$*" >&2; }
+
+staged=$(git diff --cached --name-only --diff-filter=ACMR)
+[ -z "$staged" ] && exit 0
+
+# --- 1. blocked paths ------------------------------------------------------
+while IFS= read -r file; do
+  [ -z "$file" ] && continue
+  for pattern in "${BLOCKED_PATHS[@]}"; do
+    if printf '%s' "$file" | grep -Eq -e "$pattern"; then
+      if [ "$fail" -eq 0 ]; then
+        note ''
+        note 'pre-commit: refusing to commit private files.'
+        note ''
+      fi
+      note "  ✗ $file"
+      fail=1
+      break
+    fi
+  done
+done <<< "$staged"
+
+if [ "$fail" -eq 1 ]; then
+  note ''
+  note '  These hold your real profile, config, keys, or local database.'
+  note '  Commit the .example.yaml / .env.example versions instead.'
+  note ''
+  note '  Already tracked by mistake? Untrack without deleting:'
+  note '    git rm --cached <file>'
+  note ''
+fi
+
+# --- 2. credential-shaped content -----------------------------------------
+content_fail=0
+while IFS= read -r file; do
+  [ -z "$file" ] && continue
+  # Only scan text files, and skip the example files which contain placeholders.
+  case "$file" in
+    *.example|*.example.*|*.lock|pnpm-lock.yaml) continue ;;
+  esac
+  git show ":$file" 2>/dev/null | file - --mime-type 2>/dev/null | grep -q 'text/' || continue
+
+  for pattern in "${BLOCKED_CONTENT[@]}"; do
+    if git show ":$file" 2>/dev/null | grep -Eq -e "$pattern"; then
+      if [ "$content_fail" -eq 0 ]; then
+        note ''
+        note 'pre-commit: staged changes contain something shaped like a live credential.'
+        note ''
+        content_fail=1
+      fi
+      note "  ✗ $file  (matched /$pattern/)"
+      fail=1
+    fi
+  done
+done <<< "$staged"
+
+if [ "$content_fail" -eq 1 ]; then
+  note ''
+  note '  Move the value into .env and reference it by name.'
+  note '  If this is a false positive, adjust BLOCKED_CONTENT in .githooks/pre-commit.'
+  note ''
+fi
+
+exit "$fail"

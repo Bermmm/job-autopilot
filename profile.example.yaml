@@ -1,0 +1,191 @@
+# EXAMPLE PROFILE — every detail below is invented.
+#
+# Copy to profile.yaml and replace with your real details:
+#   cp profile.example.yaml profile.yaml
+#
+# profile.yaml is gitignored and the pre-commit hook blocks it. Keep it that way.
+#
+# This file is the ONLY source of facts about you that the cover-letter
+# generator may use. If something is not in here, no letter will claim it —
+# that is enforced by a test, not by good intentions. So:
+#
+#   * Write highlights as specific, true facts. "Cut p95 latency from 800ms
+#     to 210ms" is usable; "passionate about performance" is not.
+#   * Do not round numbers up. They get quoted verbatim.
+#   * Put real but shallow experience under skills.working, not skills.strong.
+
+name: Jordan Avery
+headline: >-
+  Backend engineer who likes unglamorous reliability work — queues, migrations,
+  and the alerts nobody wants to own.
+
+contact:
+  email: jordan.avery@example.com
+  phone: '+1 555 0134'
+  location: Lisbon, Portugal
+  links:
+    - label: GitHub
+      url: https://github.com/example-jordan
+    - label: Website
+      url: https://example.com/jordan
+
+workAuthorization: EU citizen; no visa sponsorship required for EU roles.
+
+# One number, used by both the letter generator and the red-flag check so the
+# two can never disagree about it.
+yearsExperience: 7
+
+roles:
+  - company: Northwind Logistics
+    title: Senior Backend Engineer
+    start: '2022-03'
+    end: present
+    location: Remote (Portugal)
+    highlights:
+      - Moved order processing from a nightly batch to an event-driven queue, cutting order-to-dispatch time from 9 hours to 20 minutes.
+      - Cut p95 API latency from 820ms to 210ms by replacing N+1 queries with batched loaders.
+      - Ran the on-call rotation for 6 engineers and brought monthly pages down from 31 to 9.
+      - Migrated 40 million rows from MySQL to Postgres with no downtime and no data loss.
+    technologies:
+      - TypeScript
+      - Node.js
+      - Postgres
+      - Redis
+      - AWS
+      - Terraform
+
+  - company: Tessellate Analytics
+    title: Backend Engineer
+    start: '2019-06'
+    end: '2022-02'
+    location: Lisbon, Portugal
+    highlights:
+      - Built the billing service that handled roughly €4M of annual recurring revenue.
+      - Added idempotency keys to the payments path, which ended a recurring class of double-charge incidents.
+      - Wrote the integration test harness the team still uses, taking CI from 22 minutes to 7.
+    technologies:
+      - Python
+      - Django
+      - Postgres
+      - Celery
+      - Docker
+
+  - company: Harbourline
+    title: Junior Software Engineer
+    start: '2018-01'
+    end: '2019-05'
+    location: Porto, Portugal
+    highlights:
+      - Maintained an internal admin tool used daily by 30 warehouse staff.
+      - Added the audit log that satisfied the company's first external compliance review.
+    technologies:
+      - JavaScript
+      - Vue
+      - Node.js
+
+education:
+  - institution: University of Porto
+    credential: BSc
+    field: Computer Science
+    completed: '2017-07'
+
+certifications:
+  - name: AWS Certified Solutions Architect – Associate
+    issuer: Amazon Web Services
+    issued: '2023-04'
+    expires: '2026-04'
+    credentialId: EXAMPLE-1234
+
+skills:
+  # Things you would be happy to be interviewed on tomorrow.
+  strong:
+    - TypeScript
+    - Node.js
+    - Postgres
+    - API design
+    - Event-driven architecture
+    - Observability
+    - On-call and incident response
+
+  # Real but shallower. Letters must not oversell these.
+  working:
+    - Python
+    - Terraform
+    - Kubernetes
+    - React
+
+  # Explicitly not your thing. Used to raise red flags, never claimed.
+  avoid:
+    - Salesforce development
+    - Windows systems administration
+
+salary:
+  currency: EUR
+  minimum: 75000
+  target: 92000
+  period: year
+  # Shown verbatim when a form demands a number.
+  publicAnswer: Looking for €85,000–€95,000 for a senior backend role, flexible on the mix.
+
+preferences:
+  titles:
+    - Senior Backend Engineer
+    - Backend Engineer
+    - Platform Engineer
+    - Staff Engineer
+  locations:
+    - Remote (EU)
+    - Lisbon
+    - Porto
+  remoteOnly: false
+  # Posting keywords that should drag a score down hard.
+  dealBreakers:
+    - unpaid trial
+    - equity only
+    - 60-hour weeks
+    - must relocate to US
+  minYearsExperienceClaimable: 7
+
+# Canned answers to the questions application forms keep asking. Phase 2
+# autofill uses these verbatim and stops for you on anything not listed here.
+standardAnswers:
+  - key: work_authorization
+    question: Are you legally authorised to work in this location?
+    answer: Yes — EU citizen, no sponsorship needed for roles in the EU.
+
+  - key: visa_sponsorship
+    question: Will you now or in the future require visa sponsorship?
+    answer: Not for EU-based roles. For US or UK roles, yes.
+
+  - key: notice_period
+    question: What is your notice period?
+    answer: One month.
+
+  - key: salary_expectation
+    question: What are your salary expectations?
+    answer: €85,000–€95,000 for a senior backend role, flexible on the mix.
+
+  - key: start_date
+    question: When could you start?
+    answer: Four to six weeks from an offer.
+
+  - key: relocation
+    question: Are you willing to relocate?
+    answer: Within the EU, yes. Outside it, no.
+
+  - key: pronouns
+    question: What are your pronouns?
+    answer: they/them
+
+  - key: how_did_you_hear
+    question: How did you hear about this role?
+    answer: Found the opening on the company's careers page.
+
+# Style notes for the letter generator. Tone only — never new facts.
+voiceNotes:
+  - Short sentences. Plain words.
+  - No exclamation marks.
+  - Never say "passionate", "synergy", "leverage", "rockstar", or "thrilled".
+  - Do not open with "I am writing to apply for".
+  - Name one specific thing about the role and one specific thing I have done.
+  - Four short paragraphs at most. Under 220 words.

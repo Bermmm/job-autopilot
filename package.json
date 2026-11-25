@@ -1,0 +1,45 @@
+{
+  "name": "job-autopilot",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Local-first AI agent that finds fresh job postings, scores fit, writes grounded cover letters, and tracks every application.",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=20.11"
+  },
+  "packageManager": "pnpm@10.28.0",
+  "scripts": {
+    "prepare": "git config core.hooksPath .githooks || true",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "cli": "tsx src/cli/index.ts",
+    "doctor": "tsx src/cli/index.ts doctor",
+    "migrate": "tsx src/cli/index.ts migrate",
+    "guard": "bash .githooks/pre-commit"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.14.0",
+    "better-sqlite3": "^13.2.0",
+    "dotenv": "^18.0.10",
+    "openai": "^7.64.0",
+    "yaml": "^2.8.1",
+    "zod": "^4.1.13"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^9.6.0",
+    "@types/node": "^26.6.10",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3",
+    "vitest": "^5.1.2"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "better-sqlite3",
+      "esbuild"
+    ]
+  }
+}
