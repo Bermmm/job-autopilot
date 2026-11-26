@@ -7,6 +7,7 @@ import { log, out } from '../util/logger.js';
 import { createLlmClient } from '../llm/factory.js';
 import { boolFlag, intFlag, parseArgs, stringFlag, type ParsedArgs } from './args.js';
 import { doctor } from './doctor.js';
+import { draft } from './draft.js';
 import { hunt } from './hunt.js';
 import { score } from './score.js';
 
@@ -23,6 +24,7 @@ Commands:
   doctor                Check config, profile, keys, and database. No network calls.
   hunt                  Fetch fresh postings from the configured boards.
   score                 Score postings against your profile.
+  draft <jobId>         Write a grounded cover letter for one posting.
   migrate               Apply pending database migrations.
   help                  Show this message.
 
@@ -42,8 +44,11 @@ score options:
   --rescore             Re-score postings that already have a score.
   --concurrency <n>     Requests in flight at once (1-16, default 4).
 
-Not yet implemented (see the roadmap in README.md):
-  draft <jobId>         Write a grounded cover letter for one posting.
+draft options:
+  --force               Draft even if the posting is unscored or below
+                        minScoreToDraft.
+  --again               Draft again for a company and role you have already
+                        drafted or applied to. Overrides the never-twice rule.
 `;
 
 async function runHunt(args: ParsedArgs, configPath: string): Promise<number> {
@@ -82,6 +87,27 @@ async function runScore(args: ParsedArgs, configPath: string): Promise<number> {
   }
 }
 
+async function runDraft(args: ParsedArgs, configPath: string): Promise<number> {
+  const jobId = args.positional[0];
+  if (!jobId) {
+    log.error('draft needs a job id: pnpm draft <jobId>');
+    return 2;
+  }
+
+  const { config, profile } = loadAll(configPath);
+  const db = openDatabase({ path: config.paths.database });
+
+  try {
+    return await draft(config, profile, new Repo(db), createLlmClient(config, 'writing'), {
+      jobId,
+      force: boolFlag(args, 'force'),
+      again: boolFlag(args, 'again'),
+    });
+  } finally {
+    db.close();
+  }
+}
+
 function runMigrate(configPath: string): number {
   const config = loadConfig(configPath);
   const db = openDatabase({ path: config.paths.database, migrateOnOpen: false });
@@ -109,15 +135,13 @@ async function main(argv: string[]): Promise<number> {
       return runHunt(args, configPath);
     case 'score':
       return runScore(args, configPath);
+    case 'draft':
+      return runDraft(args, configPath);
     case 'migrate':
       return runMigrate(configPath);
     case 'help':
       out(USAGE);
       return 0;
-    case 'draft':
-      log.error(`"${args.command}" is not implemented yet.`);
-      out(USAGE);
-      return 2;
     default:
       log.error(`Unknown command: ${args.command}`);
       out(USAGE);

@@ -21,7 +21,8 @@
     "migrate": "tsx src/cli/index.ts migrate",
     "guard": "bash .githooks/pre-commit",
     "hunt": "tsx src/cli/index.ts hunt",
-    "score": "tsx src/cli/index.ts score"
+    "score": "tsx src/cli/index.ts score",
+    "draft": "tsx src/cli/index.ts draft"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.14.0",

@@ -6,9 +6,9 @@ writes tailored cover letters in your voice, and tracks every application.
 Everything runs on your machine against one SQLite file. Your profile never
 leaves it except as part of a prompt to the LLM provider you choose.
 
-> **Status: in progress.** Steps 1–3 of 7 are done. `pnpm hunt` fetches fresh
-> postings, `pnpm score` rates them against your profile. Cover letters are
-> next. See [Roadmap](#roadmap).
+> **Status: in progress.** Steps 1–4 of 7 are done. `pnpm hunt` fetches fresh
+> postings, `pnpm score` rates them, `pnpm draft` writes a grounded cover
+> letter. The dashboard is next. See [Roadmap](#roadmap).
 
 ## Design rules
 
@@ -77,6 +77,7 @@ database. It makes no network calls and spends nothing.
 | `pnpm doctor` | Validate config, profile, keys, and database. No network calls. |
 | `pnpm hunt` | Fetch fresh postings from every enabled board. |
 | `pnpm score` | Score postings against your profile. |
+| `pnpm draft <jobId>` | Write a grounded cover letter for one posting. |
 | `pnpm migrate` | Apply pending database migrations. |
 | `pnpm test` | Run the test suite. |
 | `pnpm typecheck` | Type-check without emitting. |
@@ -176,6 +177,64 @@ Scores are append-only and stored with the prompt version that produced them,
 so re-scoring after a prompt change adds a row rather than overwriting, and two
 scores from different prompts are never silently compared.
 
+## Drafting a letter
+
+```bash
+pnpm draft 801dda113882b0d1
+pnpm draft <jobId> --force      # draft even if unscored or below threshold
+pnpm draft <jobId> --again      # override the never-twice rule, deliberately
+```
+
+Three gates run before a single token is spent: the posting must exist, it must
+score at or above `minScoreToDraft`, and there must be no existing application
+for that company and role. The last one is the never-twice rule, checked on the
+normalised key — so a second posting of the same job on another board, in
+another city, under a different spelling, is caught.
+
+The letter is saved to `paths.letters` with front matter recording the model,
+the prompt version, and the profile fields it cited; the application moves to
+`drafted`.
+
+### Nothing unverified gets saved
+
+A letter may claim nothing that is not in your profile or the job posting, and
+that is checked rather than requested. Three checks, none of which needs a
+model — a check that cannot itself hallucinate is worth more than a second
+opinion:
+
+| Check | Catches |
+| --- | --- |
+| **Numbers** | "cut costs by 35%" when no 35 exists anywhere. Figures spelled out ("Fifteen years") count; thousands separators don't fool it. |
+| **Proper nouns** | An invented employer, a technology never used, a degree never earned. |
+| **Citations** | The model names the profile field behind each claim; a path that doesn't exist, or a value the field doesn't say, fails. |
+
+A fourth check is about tone rather than truth, because a letter can invent
+nothing and still be unsendable. It blocks the usual tells — "passionate",
+"leveraging", "world-class", "I am writing to apply" — including inflections,
+plus any term your own `voiceNotes` puts in quotes. So `Never say "rockstar"`
+in your profile becomes an enforced rule rather than a hopeful instruction.
+
+When a letter fails, the model is told exactly which token failed and why, and
+asked again — once. If the second attempt also fails, **nothing is saved**:
+
+```
+✗ Letter failed its checks after 2 attempt(s). Nothing was saved.
+
+  ✗ [number] The letter states "35", which appears in neither the profile nor the job posting.
+  ✗ [proper-noun] The letter mentions "Globex", which appears in neither the profile nor the job posting.
+  ✗ [style] The letter uses "passionate", which reads as filler. Say the thing plainly or cut it.
+```
+
+A letter with an invented fact in it is worse than no letter, so a refusal is
+the correct outcome. It usually means the profile is thin for that posting —
+adding a relevant highlight gives the model something true to work with.
+
+The grounding corpus is deliberately wider than the citation index: your salary
+rules and standard answers are true things you may state in a letter, even
+though they are not citable achievements. Your contact details are in neither,
+and are never sent to a provider at all — so a letter quoting an email address
+is a letter that invented it.
+
 ## Layout
 
 ```
@@ -184,8 +243,9 @@ src/
   db/           SQLite schema, migrations, and typed repository
   http/         The only outbound-request code: rate limits, retries, timeouts
   sources/      Per-board fetchers, freshness filter, HTML-to-text
-  profile/      Profile rendering for prompts (omits contact details)
+  profile/      Prompt rendering (omits contact details) and the fact index
   scoring/      Score schema, prompt, deterministic rules, engine
+  letters/      Letter schema, prompt, grounding and style checks, engine
   llm/          Provider-agnostic adapter + Anthropic and OpenAI implementations
   util/         Title/company normalisation (dedupe), logging, error types
   cli/          Command entry points
@@ -239,7 +299,7 @@ different models. Either can be omitted to fall back to the top-level
 1. ✅ Scaffold, config schemas, SQLite schema, LLM adapter interface
 2. ✅ Greenhouse / Lever / Ashby fetchers + 48h freshness filter — `pnpm hunt`
 3. ✅ Fit scoring with structured output and reasons — `pnpm score`
-4. ⬜ Grounded cover letters with fact citation and tests — `pnpm draft <jobId>`
+4. ✅ Grounded cover letters with fact citation and tests — `pnpm draft <jobId>`
 5. ⬜ Next.js dashboard
 6. ⬜ Full README: screenshot, Mermaid architecture diagram, "why local-first"
 7. ⬜ Phase 2: Playwright form filler, flag-gated, mandatory human review
