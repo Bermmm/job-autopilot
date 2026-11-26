@@ -1,0 +1,197 @@
+{
+  "jobs": [
+    {
+      "absolute_url": "https://job-boards.greenhouse.io/discord/jobs/8945798002",
+      "data_compliance": [
+        {
+          "type": "gdpr",
+          "requires_consent": false,
+          "requires_processing_consent": false,
+          "requires_retention_consent": false,
+          "retention_period": null,
+          "demographic_data_consent_applies": true
+        }
+      ],
+      "education": "education_optional",
+      "internal_job_id": 6585097002,
+      "location": {
+        "name": "Los Angeles Metropolitan Area or New York City Metropolitan Area"
+      },
+      "metadata": [
+        {
+          "id": 4105571002,
+          "name": "Featured on Website",
+          "value": [],
+          "value_type": "multi_select"
+        },
+        {
+          "id": 96196709002,
+          "name": "Careers Site Department",
+          "value": null,
+          "value_type": "single_select"
+        }
+      ],
+      "id": 8945798002,
+      "updated_at": "2026-11-19T21:12:00-05:00",
+      "requisition_id": "R-107498",
+      "title": "Account Executive, Media & Entertainment",
+      "company_name": "Discord",
+      "first_published": "2026-11-19T21:12:00-05:00",
+      "language": "en",
+      "application_deadline": null,
+      "content": "&lt;div class=&quot;content-intro&quot;&gt;&lt;p&gt;Discord has a highly engaged community of millions of daily active users who use the platform for many different reasons, but there’s one thing that nearly everyone does: &lt;strong&gt;play video games.&lt;/strong&gt; Discord plays a uniquely important role in the future of gaming, and we are focused on making it easier and more fun for people to hang out before, during, and after playing games.&lt;/p&gt;&lt;/div&gt;&lt;p&gt;We are seeking an experienced Account Executive to join our Media &amp;amp; Entertainment vertical within Discord&#39;s Advertising Solutions (Quests) organization. This role is perfect for someone passionate about the ",
+      "departments": [
+        {
+          "id": 4099568002,
+          "name": "Advertising Solutions",
+          "child_ids": [],
+          "parent_id": 4109059002
+        }
+      ],
+      "offices": [
+        {
+          "id": 4105189002,
+          "name": "Los Angeles, CA",
+          "location": "Los Angeles, California, United States",
+          "child_ids": [],
+          "parent_id": null
+        },
+        {
+          "id": 4105187002,
+          "name": "New York, NY",
+          "location": "New York, New York, United States",
+          "child_ids": [],
+          "parent_id": null
+        }
+      ],
+      "ai_disclaimer": null,
+      "include_ai_disclaimer": false,
+      "ai_opt_out_request_url": "http://app2.greenhouse.io/ai_opt_out_request/job_post/8945798002/ai_opt_out"
+    },
+    {
+      "absolute_url": "https://job-boards.greenhouse.io/discord/jobs/8927168002",
+      "data_compliance": [
+        {
+          "type": "gdpr",
+          "requires_consent": false,
+          "requires_processing_consent": false,
+          "requires_retention_consent": false,
+          "retention_period": null,
+          "demographic_data_consent_applies": true
+        }
+      ],
+      "education": "education_optional",
+      "internal_job_id": 6577170002,
+      "location": {
+        "name": "San Francisco Bay Area, Los Angeles"
+      },
+      "metadata": [
+        {
+          "id": 4105571002,
+          "name": "Featured on Website",
+          "value": [],
+          "value_type": "multi_select"
+        },
+        {
+          "id": 96196709002,
+          "name": "Careers Site Department",
+          "value": null,
+          "value_type": "single_select"
+        }
+      ],
+      "id": 8927168002,
+      "updated_at": "2026-11-17T20:02:06-05:00",
+      "requisition_id": "R-107471",
+      "title": "Account Executive, Mobile Gaming & Apps",
+      "company_name": "Discord",
+      "first_published": "2026-11-13T15:33:44-05:00",
+      "language": "en",
+      "application_deadline": null,
+      "content": "&lt;div class=&quot;content-intro&quot;&gt;&lt;p&gt;Discord has a highly engaged community of millions of daily active users who use the platform for many different reasons, but there’s one thing that nearly everyone does: &lt;strong&gt;play video games.&lt;/strong&gt; Discord plays a uniquely important role in the future of gaming, and we are focused on making it easier and more fun for people to hang out before, during, and after playing games.&lt;/p&gt;&lt;/div&gt;&lt;p&gt;We&#39;re looking for an experienced Account Executive to join our Advertising Solutions (Quests) team to grow our mobile gaming advertising business. This is a strategic individual contributor role for a performance-mi",
+      "departments": [
+        {
+          "id": 4099568002,
+          "name": "Advertising Solutions",
+          "child_ids": [],
+          "parent_id": 4109059002
+        }
+      ],
+      "offices": [
+        {
+          "id": 4000383002,
+          "name": "San Francisco, CA",
+          "location": "San Francisco, California, United States",
+          "child_ids": [],
+          "parent_id": null
+        }
+      ],
+      "ai_disclaimer": null,
+      "include_ai_disclaimer": false,
+      "ai_opt_out_request_url": "http://app2.greenhouse.io/ai_opt_out_request/job_post/8927168002/ai_opt_out"
+    },
+    {
+      "absolute_url": "https://job-boards.greenhouse.io/discord/jobs/8917177002",
+      "data_compliance": [
+        {
+          "type": "gdpr",
+          "requires_consent": false,
+          "requires_processing_consent": false,
+          "requires_retention_consent": false,
+          "retention_period": null,
+          "demographic_data_consent_applies": true
+        }
+      ],
+      "education": "education_optional",
+      "internal_job_id": 6572884002,
+      "location": {
+        "name": "San Francisco Bay Area"
+      },
+      "metadata": [
+        {
+          "id": 4105571002,
+          "name": "Featured on Website",
+          "value": [],
+          "value_type": "multi_select"
+        },
+        {
+          "id": 96196709002,
+          "name": "Careers Site Department",
+          "value": null,
+          "value_type": "single_select"
+        }
+      ],
+      "id": 8917177002,
+      "updated_at": "2026-11-19T16:16:19-05:00",
+      "requisition_id": "R-107469",
+      "title": "Associate Commercial Counsel",
+      "company_name": "Discord",
+      "first_published": "2026-11-03T11:27:16-05:00",
+      "language": "en",
+      "application_deadline": null,
+      "content": "&lt;div class=&quot;content-intro&quot;&gt;&lt;p&gt;Discord has a highly engaged community of millions of daily active users who use the platform for many different reasons, but there’s one thing that nearly everyone does: &lt;strong&gt;play video games.&lt;/strong&gt; Discord plays a uniquely important role in the future of gaming, and we are focused on making it easier and more fun for people to hang out before, during, and after playing games.&lt;/p&gt;&lt;/div&gt;&lt;p&gt;Discord&#39;s Commercial &amp;amp; Marketing Legal (CoMa) team is the legal engine behind Discord&#39;s revenue and partnership business. We partner with Global Partnerships, Developer &amp;amp; Platform Solutions, Corp",
+      "departments": [
+        {
+          "id": 4095032002,
+          "name": "Legal",
+          "child_ids": [],
+          "parent_id": 4094263002
+        }
+      ],
+      "offices": [
+        {
+          "id": 4000383002,
+          "name": "San Francisco, CA",
+          "location": "San Francisco, California, United States",
+          "child_ids": [],
+          "parent_id": null
+        }
+      ],
+      "ai_disclaimer": null,
+      "include_ai_disclaimer": false,
+      "ai_opt_out_request_url": "http://app2.greenhouse.io/ai_opt_out_request/job_post/8917177002/ai_opt_out"
+    }
+  ],
+  "meta": {
+    "total": 30
+  }
+}

@@ -1,6 +1,12 @@
 import type { Database } from 'better-sqlite3';
 
-import { dedupeKey, jobId, normalizeCompany, normalizeTitle } from '../util/normalize.js';
+import {
+  dedupeKey,
+  dedupeKeyFrom,
+  jobId,
+  normalizeCompany,
+  normalizeTitle,
+} from '../util/normalize.js';
 import type {
   Application,
   ApplicationEvent,
@@ -65,6 +71,12 @@ export interface JobInput {
   description?: string | null;
   /** ISO 8601. Omit when the board does not say. */
   postedAt?: string | null;
+  /**
+   * Stable identity for the company, independent of its display name.
+   * Fetchers pass the board token. Falls back to the normalised `company`,
+   * which is all a feed can offer.
+   */
+  companyKey?: string;
   raw?: unknown;
 }
 
@@ -89,12 +101,12 @@ export class Repo {
   upsertJob(input: JobInput): UpsertJobResult {
     const id = jobId(input.source, input.externalId);
     const timestamp = nowIso();
-    const companySlug = normalizeCompany(input.company);
+    const companySlug = normalizeCompany(input.companyKey ?? input.company);
     const location = input.location ?? null;
     // The location is folded into the title normalisation so the same role
     // advertised in two cities produces one dedupe key.
     const titleNormalized = normalizeTitle(input.title, { location });
-    const key = dedupeKey(input.company, input.title, location);
+    const key = dedupeKeyFrom(companySlug, input.title, location);
 
     const existing = this.db
       .prepare('SELECT * FROM jobs WHERE id = ?')
@@ -335,10 +347,16 @@ export class Repo {
     jobId: string;
     /** The posting's location, so the key matches `upsertJob`'s. */
     location?: string | null;
+    /** Stable company identity, as passed to `upsertJob`. */
+    companyKey?: string;
     status?: ApplicationStatus;
     notes?: string | null;
   }): { application: Application; created: boolean } {
-    const key = dedupeKey(input.company, input.title, input.location);
+    const key = dedupeKeyFrom(
+      normalizeCompany(input.companyKey ?? input.company),
+      input.title,
+      input.location,
+    );
     const existing = this.db
       .prepare('SELECT * FROM applications WHERE dedupe_key = ?')
       .get(key) as Record<string, unknown> | undefined;
@@ -384,6 +402,9 @@ export class Repo {
       title: job.title,
       jobId: job.id,
       location: job.location,
+      // The job row already carries the key computed at fetch time; reusing
+      // its slug keeps the two in step even if the display name changed.
+      companyKey: job.companySlug,
       ...options,
     });
   }
@@ -488,6 +509,34 @@ export class Repo {
         outcome.error ?? null,
         id,
       );
+  }
+
+  /** Most recent fetch runs, newest first. Shown by `hunt` and the dashboard. */
+  recentFetchRuns(limit = 50): Array<{
+    id: number;
+    source: string;
+    target: string;
+    startedAt: string;
+    jobsSeen: number;
+    jobsFresh: number;
+    jobsNew: number;
+    ok: boolean;
+    error: string | null;
+  }> {
+    const rows = this.db
+      .prepare('SELECT * FROM fetch_runs ORDER BY id DESC LIMIT ?')
+      .all(limit) as Record<string, unknown>[];
+    return rows.map((row) => ({
+      id: row.id as number,
+      source: row.source as string,
+      target: row.target as string,
+      startedAt: row.started_at as string,
+      jobsSeen: row.jobs_seen as number,
+      jobsFresh: row.jobs_fresh as number,
+      jobsNew: row.jobs_new as number,
+      ok: row.ok === 1,
+      error: (row.error as string | null) ?? null,
+    }));
   }
 
   /** Counts per status, for the dashboard header and `doctor`. */

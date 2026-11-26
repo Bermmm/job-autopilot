@@ -6,9 +6,9 @@ writes tailored cover letters in your voice, and tracks every application.
 Everything runs on your machine against one SQLite file. Your profile never
 leaves it except as part of a prompt to the LLM provider you choose.
 
-> **Status: in progress.** Step 1 of 7 is done — scaffold, config schemas,
-> database schema, and the LLM adapter layer. No postings are fetched yet.
-> See [Roadmap](#roadmap).
+> **Status: in progress.** Steps 1–2 of 7 are done. `pnpm hunt` fetches fresh
+> postings from Greenhouse, Lever, and Ashby into a local database. Scoring and
+> cover letters are next. See [Roadmap](#roadmap).
 
 ## Design rules
 
@@ -75,22 +75,60 @@ database. It makes no network calls and spends nothing.
 | Command | What it does |
 | --- | --- |
 | `pnpm doctor` | Validate config, profile, keys, and database. No network calls. |
+| `pnpm hunt` | Fetch fresh postings from every enabled board. |
 | `pnpm migrate` | Apply pending database migrations. |
 | `pnpm test` | Run the test suite. |
 | `pnpm typecheck` | Type-check without emitting. |
 | `pnpm guard` | Run the pre-commit secret check by hand. |
 
+## Hunting
+
+```bash
+pnpm hunt                        # postings from the last 48 hours
+pnpm hunt --window-hours 168     # backfill a week (1-720)
+pnpm hunt --only stripe          # one board, by token or name
+pnpm hunt --dry-run              # fetch and report, write nothing
+```
+
+A real run over the 20 seeded boards:
+
+```
+  ✓ Stripe (greenhouse)          769 listed, 17 fresh, 17 new
+  ✓ Cloudflare (greenhouse)      528 listed, 25 fresh, 25 new
+  ✓ Spotify (lever)              97 listed, 7 fresh, 7 new
+  ✓ OpenAI (ashby)               876 listed, 18 fresh, 18 new
+  · Figma (greenhouse)           141 listed, 0 fresh, 0 new
+  ✗ Nonexistent Co (lever)       ...returned HTTP 404.
+
+5028 postings listed across 20 board(s); 132 newer than 48h.
+132 new posting(s) stored, 0 already known.
+20 HTTP request(s) made.
+```
+
+One request per board — all three APIs return descriptions inline, so there is
+no per-job fetch. A board failing never fails the run: a 404 means the company
+moved provider, which is reported and skipped. Re-running is safe; postings are
+keyed on `(source, external_id)` and a second run updates `last_seen_at`
+without creating duplicates.
+
+Being polite to other people's free APIs is enforced, not advisory: a global
+request ceiling, a minimum gap between hits on the same host, an identifiable
+user agent, and `Retry-After` honoured when a server asks us to back off.
+
 ## Layout
 
 ```
 src/
-  config/     Zod schemas for config.yaml, profile.yaml, companies.yaml, .env
-  db/         SQLite schema, migrations, and typed repository
-  llm/        Provider-agnostic adapter + Anthropic and OpenAI implementations
-  util/       Title/company normalisation (dedupe), logging, error types
-  cli/        Command entry points
-tests/        Vitest: dedupe pairs, schema validation, DB constraints, retries
-.githooks/    Pre-commit secret and private-data guard
+  config/       Zod schemas for config.yaml, profile.yaml, companies.yaml, .env
+  db/           SQLite schema, migrations, and typed repository
+  http/         The only outbound-request code: rate limits, retries, timeouts
+  sources/      Per-board fetchers, freshness filter, HTML-to-text
+  llm/          Provider-agnostic adapter + Anthropic and OpenAI implementations
+  util/         Title/company normalisation (dedupe), logging, error types
+  cli/          Command entry points
+tests/
+  fixtures/     Real API captures, so tests exercise the actual payload shapes
+.githooks/      Pre-commit secret and private-data guard
 ```
 
 Three pieces carry most of the weight:
@@ -103,6 +141,15 @@ does not matter. A trailing segment it cannot identify is kept — `Engineer -
 Payments` is a different job from `Engineer - Berlin`, and only the location
 field tells them apart. A false split costs a duplicate application; a false
 merge costs a job you never see. Both are tested as spelling pairs.
+
+**`src/sources/`** holds one fetcher per board, sharing only an interface and
+the HTTP client. They differ more than they look: Lever returns a bare array
+whose title field is `text` and whose `createdAt` is epoch milliseconds; Ashby
+flags unadvertised postings with `isListed: false` and can report
+`isRemote: true` alongside `workplaceType: "Hybrid"` on one posting; Greenhouse
+returns descriptions as *double-escaped* HTML. The tests run against captured
+responses from the live APIs, so those quirks are pinned down rather than
+assumed.
 
 **`src/db/schema.sql`** separates a *posting* (something a board published,
 possibly many times) from an *application* (something you did, at most once per

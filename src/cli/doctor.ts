@@ -93,7 +93,10 @@ export function doctor(configPath = 'config.yaml'): number {
         const summary = Object.entries(counts)
           .map(([status, count]) => `${status}=${count}`)
           .join(' ');
-        return `schema v${version} (code expects v${SCHEMA_VERSION}); ${repo.countJobs()} job(s)${summary ? `; ${summary}` : ''}`;
+        const runs = repo.recentFetchRuns(20);
+        const lastRun = runs[0];
+        const lastHunt = lastRun ? `; last hunt ${lastRun.startedAt}` : '; no hunt run yet';
+        return `schema v${version} (code expects v${SCHEMA_VERSION}); ${repo.countJobs()} job(s)${summary ? `; ${summary}` : ''}${lastHunt}`;
       } finally {
         db.close();
       }

@@ -19,7 +19,8 @@
     "cli": "tsx src/cli/index.ts",
     "doctor": "tsx src/cli/index.ts doctor",
     "migrate": "tsx src/cli/index.ts migrate",
-    "guard": "bash .githooks/pre-commit"
+    "guard": "bash .githooks/pre-commit",
+    "hunt": "tsx src/cli/index.ts hunt"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.14.0",

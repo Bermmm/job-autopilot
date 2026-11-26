@@ -292,7 +292,23 @@ export function dedupeKey(
   title: string,
   location?: string | null,
 ): string {
-  return `${normalizeCompany(company)}::${normalizeTitle(title, { location })}`;
+  return dedupeKeyFrom(normalizeCompany(company), title, location);
+}
+
+/**
+ * Same key, built from an already-stable company slug.
+ *
+ * Fetchers use this with the board token rather than the display name,
+ * because the token is the company's stable identity. Renaming `name:` in
+ * companies.yaml must not change any dedupe key — if it did, a rename would
+ * silently make every past application invisible and let you apply twice.
+ */
+export function dedupeKeyFrom(
+  companySlug: string,
+  title: string,
+  location?: string | null,
+): string {
+  return `${companySlug}::${normalizeTitle(title, { location })}`;
 }
 
 /** Stable id for a posting, so re-running `hunt` updates rather than duplicates. */
