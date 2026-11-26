@@ -20,7 +20,8 @@
     "doctor": "tsx src/cli/index.ts doctor",
     "migrate": "tsx src/cli/index.ts migrate",
     "guard": "bash .githooks/pre-commit",
-    "hunt": "tsx src/cli/index.ts hunt"
+    "hunt": "tsx src/cli/index.ts hunt",
+    "score": "tsx src/cli/index.ts score"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.14.0",

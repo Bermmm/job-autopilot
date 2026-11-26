@@ -1,5 +1,14 @@
 /** Row shapes as stored. JSON columns are strings here; the repo layer parses them. */
 
+import type { RedFlag } from '../scoring/schema.js';
+
+/**
+ * Red flags are defined by the scoring schema, which is what validates them
+ * on the way in. Re-exported here so database consumers have one type rather
+ * than a second declaration that could drift from the schema.
+ */
+export type { RedFlag };
+
 export type JobSource = 'greenhouse' | 'lever' | 'ashby' | 'feed';
 
 export type ApplicationStatus =
@@ -59,11 +68,7 @@ export interface Job {
   lastSeenAt: string;
 }
 
-export interface RedFlag {
-  /** Which rule tripped, so the dashboard can group them. */
-  kind: 'years' | 'location' | 'degree' | 'salary' | 'seniority' | 'other';
-  detail: string;
-}
+
 
 export interface Score {
   id: number;

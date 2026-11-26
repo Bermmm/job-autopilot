@@ -6,9 +6,9 @@ writes tailored cover letters in your voice, and tracks every application.
 Everything runs on your machine against one SQLite file. Your profile never
 leaves it except as part of a prompt to the LLM provider you choose.
 
-> **Status: in progress.** Steps 1–2 of 7 are done. `pnpm hunt` fetches fresh
-> postings from Greenhouse, Lever, and Ashby into a local database. Scoring and
-> cover letters are next. See [Roadmap](#roadmap).
+> **Status: in progress.** Steps 1–3 of 7 are done. `pnpm hunt` fetches fresh
+> postings, `pnpm score` rates them against your profile. Cover letters are
+> next. See [Roadmap](#roadmap).
 
 ## Design rules
 
@@ -76,6 +76,7 @@ database. It makes no network calls and spends nothing.
 | --- | --- |
 | `pnpm doctor` | Validate config, profile, keys, and database. No network calls. |
 | `pnpm hunt` | Fetch fresh postings from every enabled board. |
+| `pnpm score` | Score postings against your profile. |
 | `pnpm migrate` | Apply pending database migrations. |
 | `pnpm test` | Run the test suite. |
 | `pnpm typecheck` | Type-check without emitting. |
@@ -115,6 +116,66 @@ Being polite to other people's free APIs is enforced, not advisory: a global
 request ceiling, a minimum gap between hits on the same host, an identifiable
 user agent, and `Retry-After` honoured when a server asks us to back off.
 
+## Scoring
+
+```bash
+pnpm score                       # every posting without a score yet
+pnpm score --limit 20            # keep a first run small
+pnpm score --job <jobId>         # one posting
+pnpm score --rescore             # redo postings that already have a score
+pnpm score --concurrency 8       # requests in flight (1-16, default 4)
+```
+
+```
+   86 strong   Databricks — Deployment Strategist
+   76 good     Cloudflare — Senior Manager, Customer Engineering      ⚠ 1
+   54 partial  Cloudflare — Senior GCC Government Relations Manager   ⚠ 1
+   22 no       Cloudflare — Senior Sales Manager, Digital Native      ⚠ 1
+
+Scored 12 posting(s): 32,113 input + 1,440 output tokens.
+5 at or above your minScoreToDraft of 70.
+```
+
+Scores are 0-100 against fixed bands (strong / good / partial / weak / no),
+defined in the prompt so two runs are comparable. Each score carries up to five
+reasons and any red flags — stated requirements your profile does not meet.
+
+**This is the command that spends money.** It says how many postings and roughly
+how many tokens before it starts, and `--limit` keeps a first run small. On the
+default `claude-haiku-5-5` a full 150-posting run is about $0.05; on
+`claude-opus-5-5` it is about $2.
+
+### Judgment versus arithmetic
+
+Not every red flag is a judgment call. Asking a model whether a posting
+contains a phrase you said you will not accept is asking it to do a substring
+search, and it will occasionally get it wrong. So `src/scoring/rules.ts` decides
+those in code — deal-breaker phrases, a `remoteOnly` mismatch, a technology
+under `skills.avoid`, a stated years-of-experience floor above your profile —
+and the model is left the things that need reading comprehension, like whether
+a posting's seniority matches your history. The two sets are merged, with the
+exact figure winning where both speak.
+
+A deal-breaker you named in your own words is the one thing that caps a score
+outright, no matter how enthusiastic the model was:
+
+```
+clean posting                  model 92 ->  92  capped=false
+deal-breaker: equity only      model 92 ->  15  capped=true
+deal-breaker: 60-hour weeks    model 92 ->  15  capped=true
+```
+
+### What gets sent to the provider
+
+Your contact details do not. `src/profile/view.ts` renders the profile for
+prompts and omits your email, phone number, and links — scoring needs your
+experience, not a way to reach you. Tests assert the rendered profile contains
+no `@` and no URL.
+
+Scores are append-only and stored with the prompt version that produced them,
+so re-scoring after a prompt change adds a row rather than overwriting, and two
+scores from different prompts are never silently compared.
+
 ## Layout
 
 ```
@@ -123,6 +184,8 @@ src/
   db/           SQLite schema, migrations, and typed repository
   http/         The only outbound-request code: rate limits, retries, timeouts
   sources/      Per-board fetchers, freshness filter, HTML-to-text
+  profile/      Profile rendering for prompts (omits contact details)
+  scoring/      Score schema, prompt, deterministic rules, engine
   llm/          Provider-agnostic adapter + Anthropic and OpenAI implementations
   util/         Title/company normalisation (dedupe), logging, error types
   cli/          Command entry points
@@ -174,8 +237,8 @@ different models. Either can be omitted to fall back to the top-level
 ## Roadmap
 
 1. ✅ Scaffold, config schemas, SQLite schema, LLM adapter interface
-2. ⬜ Greenhouse / Lever / Ashby fetchers + 48h freshness filter — `pnpm hunt`
-3. ⬜ Fit scoring with structured output and reasons — `pnpm score`
+2. ✅ Greenhouse / Lever / Ashby fetchers + 48h freshness filter — `pnpm hunt`
+3. ✅ Fit scoring with structured output and reasons — `pnpm score`
 4. ⬜ Grounded cover letters with fact citation and tests — `pnpm draft <jobId>`
 5. ⬜ Next.js dashboard
 6. ⬜ Full README: screenshot, Mermaid architecture diagram, "why local-first"
