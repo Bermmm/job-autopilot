@@ -7,29 +7,50 @@ llm:
   # "anthropic" or "openai". The adapter layer makes these interchangeable.
   provider: anthropic
 
-  # Exact model id. Not validated against a list, because model ids change
-  # more often than this file does.
+  # Default model for every task. Not validated against a list, because model
+  # ids change more often than this file does.
   #   anthropic: claude-opus-5-5 (most capable), claude-sonnet-5-5,
-  #              claude-haiku-5-5 (cheapest — fine for scoring at volume)
+  #              claude-haiku-5-5 (cheapest)
   #   openai:    whatever model your account has access to
   model: claude-opus-5-5
 
   # How hard the model should think. Anthropic only; the OpenAI adapter
-  # ignores it. "low" is plenty for scoring, "medium" or "high" suits letters.
+  # ignores it.
   effort: medium
 
   maxOutputTokens: 8000
   timeoutMs: 120000
   maxRetries: 3
 
+  # Per-task overrides. Anything omitted falls back to the settings above.
+  #
+  # These two jobs have very different shapes. Scoring reads every fresh
+  # posting — about 150 a day across the 20 boards in companies.example.yaml,
+  # at a median ~1,500 tokens each. Letter writing is one call for a job you
+  # have already decided you want. Measured against real board data, scoring
+  # one run costs roughly $2.16 on claude-opus-5-5 and $0.05 on
+  # claude-haiku-5-5, so the default splits them.
+  scoring:
+    model: claude-haiku-5-5
+    effort: low
+    maxOutputTokens: 2000
+
+  writing:
+    model: claude-opus-5-5
+    effort: medium
+    maxOutputTokens: 4000
+
 freshness:
   # Only ingest postings published within this many hours. The whole point of
   # the tool is to be early, so the default is deliberately tight.
   windowHours: 48
 
-  # Ashby and some feeds do not always publish a timestamp. When true, such a
-  # posting is kept the first time it is seen and dated with first-seen time.
-  # When false it is skipped, which is stricter but misses real jobs.
+  # All three board APIs do publish a real first-published timestamp
+  # (greenhouse first_published, lever createdAt, ashby publishedAt), and
+  # across 5,000 live postings none were missing it — so this only comes up
+  # for RSS/JSON feeds, which often omit dates. When true, an undated posting
+  # is kept the first time it is seen and dated with first-seen time. When
+  # false it is skipped, which is stricter but misses real jobs.
   keepUndatedOnFirstSight: true
 
 http:

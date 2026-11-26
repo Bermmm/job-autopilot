@@ -2,7 +2,7 @@ import OpenAI, { APIError } from 'openai';
 import { zodTextFormat } from 'openai/helpers/zod';
 import type { z } from 'zod';
 
-import type { LlmConfig } from '../config/config.schema.js';
+import type { ResolvedLlmConfig } from '../config/config.schema.js';
 import { LlmError } from '../util/errors.js';
 import { isRetryableStatus, withRetries } from './retry.js';
 import type { LlmClient, LlmResult, StructuredRequest, TextRequest, LlmUsage } from './types.js';
@@ -24,9 +24,9 @@ export class OpenAiClient implements LlmClient {
   readonly model: string;
 
   private readonly client: OpenAI;
-  private readonly config: LlmConfig;
+  private readonly config: ResolvedLlmConfig;
 
-  constructor(options: { apiKey: string; baseURL?: string | undefined; config: LlmConfig }) {
+  constructor(options: { apiKey: string; baseURL?: string | undefined; config: ResolvedLlmConfig }) {
     this.config = options.config;
     this.model = options.config.model;
     this.client = new OpenAI({

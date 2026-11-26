@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs';
 
 import { boardLabel } from '../config/companies.schema.js';
+import { resolveLlmConfig } from '../config/config.schema.js';
 import { loadConfig, loadCompanies, loadProfile, resolveFromRoot } from '../config/load.js';
 import { readEnv } from '../config/env.js';
 import { currentVersion, openDatabase, Repo, SCHEMA_VERSION } from '../db/index.js';
@@ -34,7 +35,14 @@ export function doctor(configPath = 'config.yaml'): number {
 
   const configResult = check('config.yaml loads and validates', () => {
     const config = loadConfig(configPath);
-    return `provider=${config.llm.provider} model=${config.llm.model} freshness=${config.freshness.windowHours}h`;
+    const scoring = resolveLlmConfig(config.llm, 'scoring');
+    const writing = resolveLlmConfig(config.llm, 'writing');
+    return [
+      `provider=${config.llm.provider}`,
+      `scoring=${scoring.model} (effort ${scoring.effort})`,
+      `writing=${writing.model} (effort ${writing.effort})`,
+      `freshness=${config.freshness.windowHours}h`,
+    ].join('\n      ');
   });
   results.push(configResult);
 

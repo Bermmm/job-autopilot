@@ -13,10 +13,28 @@ export type LlmProvider = z.infer<typeof LlmProviderSchema>;
 export const EffortSchema = z.enum(['low', 'medium', 'high', 'xhigh', 'max']);
 export type Effort = z.infer<typeof EffortSchema>;
 
+/**
+ * Per-task overrides. Scoring runs over every fresh posting (~150 a day
+ * across 20 boards), while letter-writing is one call for a job you already
+ * decided you want — so they do not want the same model. Anything omitted
+ * here falls back to the top-level `llm` setting.
+ */
+export const LlmTaskOverrideSchema = z
+  .object({
+    model: z.string().min(1).optional(),
+    effort: EffortSchema.optional(),
+    maxOutputTokens: z.number().int().min(256).max(128_000).optional(),
+  })
+  .strict();
+export type LlmTaskOverride = z.infer<typeof LlmTaskOverrideSchema>;
+
 export const LlmConfigSchema = z
   .object({
     provider: LlmProviderSchema.default('anthropic'),
-    /** Exact model id. Deliberately not checked against a list: ids change often. */
+    /**
+     * Default model for every task. Exact id, deliberately not checked
+     * against a list: ids change more often than this file does.
+     */
     model: z.string().min(1),
     /**
      * Reasoning effort. Honoured by the Anthropic adapter; the OpenAI adapter
@@ -24,12 +42,48 @@ export const LlmConfigSchema = z
      */
     effort: EffortSchema.default('medium'),
     maxOutputTokens: z.number().int().min(256).max(128_000).default(8_000),
-    /** Wall-clock budget for a single LLM call. */
+    /** Wall-clock budget for a single LLM call. Shared by all tasks. */
     timeoutMs: z.number().int().min(1_000).max(600_000).default(120_000),
     maxRetries: z.number().int().min(0).max(8).default(3),
+
+    /** Bulk fit scoring. Cheap and shallow is the right trade here. */
+    scoring: LlmTaskOverrideSchema.prefault({}),
+    /** Cover letters. Worth the better model. */
+    writing: LlmTaskOverrideSchema.prefault({}),
   })
   .strict();
 export type LlmConfig = z.infer<typeof LlmConfigSchema>;
+
+/** Which job an LLM call is doing. Picks the model it runs on. */
+export type LlmTask = 'scoring' | 'writing';
+
+/** A task's settings with every fallback already applied. */
+export interface ResolvedLlmConfig {
+  provider: LlmProvider;
+  task: LlmTask;
+  model: string;
+  effort: Effort;
+  maxOutputTokens: number;
+  timeoutMs: number;
+  maxRetries: number;
+}
+
+/**
+ * Flattens `llm` plus the task's overrides into the single config an adapter
+ * needs, so no adapter has to know that per-task overrides exist.
+ */
+export function resolveLlmConfig(llm: LlmConfig, task: LlmTask): ResolvedLlmConfig {
+  const override = llm[task];
+  return {
+    provider: llm.provider,
+    task,
+    model: override.model ?? llm.model,
+    effort: override.effort ?? llm.effort,
+    maxOutputTokens: override.maxOutputTokens ?? llm.maxOutputTokens,
+    timeoutMs: llm.timeoutMs,
+    maxRetries: llm.maxRetries,
+  };
+}
 
 export const FreshnessConfigSchema = z
   .object({

@@ -7,7 +7,8 @@ Everything runs on your machine against one SQLite file. Your profile never
 leaves it except as part of a prompt to the LLM provider you choose.
 
 > **Status: in progress.** Step 1 of 7 is done — scaffold, config schemas,
-> database schema, and the LLM adapter layer. See [Roadmap](#roadmap).
+> database schema, and the LLM adapter layer. No postings are fetched yet.
+> See [Roadmap](#roadmap).
 
 ## Design rules
 
@@ -16,6 +17,10 @@ These are enforced by code and tests, not by good intentions:
 - **No scraping sites that forbid it.** Greenhouse, Lever, and Ashby public job
   board APIs, plus RSS/JSON feeds. No LinkedIn, no Indeed. The config schema
   only accepts those sources, so there is no back door.
+- **Fresh means actually fresh.** Freshness comes from each board's
+  first-published field (`first_published`, `createdAt`, `publishedAt`), never
+  from "last updated" — on one real board, `updated_at` reports five jobs as
+  new in 48 hours when none of them are.
 - **Never apply twice.** A `UNIQUE` index on a normalised company+role key is
   what makes this true, so it holds even if two runs race.
 - **Never invent a fact.** The cover-letter generator may use only what is in
@@ -49,8 +54,11 @@ Then edit:
 - `profile.yaml` — your real work history, skills, and salary rules. This is the
   only source of facts any letter may use, so write highlights as specific true
   statements. Gitignored.
-- `companies.yaml` — the board tokens you care about.
-- `config.yaml` — provider, model, freshness window, rate limits.
+- `companies.yaml` — the board tokens you care about. Ships with 20 verified
+  boards (~5,000 open postings, ~150 newer than 48 hours on a given day); prune
+  to taste. Tokens do go stale as companies switch providers, so a 404 from one
+  board is reported per board rather than failing the run.
+- `config.yaml` — provider, models, freshness window, rate limits.
 - `.env` — your `ANTHROPIC_API_KEY` or `OPENAI_API_KEY`.
 
 Check it over:
@@ -106,6 +114,15 @@ it was written against.
 `completeStructured` for schema-validated JSON. Provider SDKs are imported in
 exactly two files. Structured output is validated locally even when the provider
 claims to have constrained it.
+
+Models are configured per task, because the two jobs have very different
+shapes. Scoring reads every fresh posting — about 150 a day across the boards
+in `companies.example.yaml`, median ~1,500 tokens each — while letter writing is
+one call for a job you already decided you want. Measured against live board
+data, one scoring run costs roughly **$2.16** on `claude-opus-5-5` versus
+**$0.05** on `claude-haiku-5-5`, so `llm.scoring` and `llm.writing` default to
+different models. Either can be omitted to fall back to the top-level
+`llm.model`.
 
 ## Roadmap
 

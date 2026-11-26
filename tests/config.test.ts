@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { parse as parseYaml } from 'yaml';
 
-import { ConfigSchema } from '../src/config/config.schema.js';
+import { ConfigSchema, resolveLlmConfig } from '../src/config/config.schema.js';
 import { ProfileSchema } from '../src/config/profile.schema.js';
 import { CompaniesFileSchema } from '../src/config/companies.schema.js';
 import { resolveFromRoot } from '../src/config/load.js';
@@ -36,6 +36,7 @@ describe('config.example.yaml', () => {
 
 describe('ConfigSchema', () => {
   const minimal = { llm: { model: 'claude-opus-5-5' } };
+
 
   it('fills in every section from defaults', () => {
     const config = ConfigSchema.parse(minimal);
@@ -231,5 +232,76 @@ describe('CompaniesFileSchema', () => {
     expect(
       CompaniesFileSchema.safeParse({ boards: [{ source: 'linkedin', token: 'acme' }] }).success,
     ).toBe(false);
+  });
+});
+
+describe('resolveLlmConfig', () => {
+  const base = { provider: 'anthropic' as const, model: 'default-model' };
+
+  it('falls back to the top-level settings when a task overrides nothing', () => {
+    const config = ConfigSchema.parse({ llm: base });
+    const scoring = resolveLlmConfig(config.llm, 'scoring');
+
+    expect(scoring.model).toBe('default-model');
+    expect(scoring.effort).toBe('medium');
+    expect(scoring.maxOutputTokens).toBe(8000);
+    expect(scoring.task).toBe('scoring');
+  });
+
+  it('lets a task override the model without affecting the other task', () => {
+    const config = ConfigSchema.parse({
+      llm: { ...base, scoring: { model: 'cheap-model', effort: 'low' } },
+    });
+
+    expect(resolveLlmConfig(config.llm, 'scoring').model).toBe('cheap-model');
+    expect(resolveLlmConfig(config.llm, 'scoring').effort).toBe('low');
+    expect(resolveLlmConfig(config.llm, 'writing').model).toBe('default-model');
+    expect(resolveLlmConfig(config.llm, 'writing').effort).toBe('medium');
+  });
+
+  it('shares timeout and retry settings across tasks', () => {
+    const config = ConfigSchema.parse({ llm: { ...base, timeoutMs: 30000, maxRetries: 1 } });
+
+    for (const task of ['scoring', 'writing'] as const) {
+      expect(resolveLlmConfig(config.llm, task).timeoutMs).toBe(30000);
+      expect(resolveLlmConfig(config.llm, task).maxRetries).toBe(1);
+    }
+  });
+
+  it('still accepts a step-1 config with no task blocks at all', () => {
+    // Backwards compatibility: one model for everything remains valid.
+    const result = ConfigSchema.safeParse({ llm: { model: 'one-model' } });
+    expect(result.success).toBe(true);
+    expect(resolveLlmConfig(result.data!.llm, 'writing').model).toBe('one-model');
+  });
+
+  it('rejects a typo inside a task block rather than ignoring it', () => {
+    expect(
+      ConfigSchema.safeParse({ llm: { ...base, scoring: { modell: 'oops' } } }).success,
+    ).toBe(false);
+  });
+
+  it('splits scoring and writing by default in the example config', () => {
+    const config = ConfigSchema.parse(loadExample('config.example.yaml'));
+    const scoring = resolveLlmConfig(config.llm, 'scoring');
+    const writing = resolveLlmConfig(config.llm, 'writing');
+
+    expect(scoring.model).not.toBe(writing.model);
+    expect(scoring.effort).toBe('low');
+  });
+});
+
+describe('companies.example.yaml — the seeded board list', () => {
+  it('carries enough boards to make a 48h window useful', () => {
+    const companies = CompaniesFileSchema.parse(loadExample('companies.example.yaml'));
+    expect(companies.boards.filter((board) => board.enabled).length).toBeGreaterThanOrEqual(15);
+  });
+
+  it('has no duplicate tokens within a source', () => {
+    // Also enforced by the schema; asserted here so the failure message names
+    // the example file rather than a generic validation error.
+    const companies = CompaniesFileSchema.parse(loadExample('companies.example.yaml'));
+    const keys = companies.boards.map((board) => `${board.source}:${board.token}`);
+    expect(new Set(keys).size).toBe(keys.length);
   });
 });
